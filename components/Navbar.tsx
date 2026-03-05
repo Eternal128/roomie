@@ -1,7 +1,10 @@
 import React from 'react'
 import {Box} from "lucide-react";
+import Button from "./ui/Button";
 
 const Navbar = () => {
+    const isSignedIn = false
+    const username = "James"
     const handleAuthClick = async () => {};
 
     return (
@@ -23,11 +26,23 @@ const Navbar = () => {
                     </div>
 
                     <div className={"actions"}>
-                        <button onClick={handleAuthClick} className={"login"}>
-                            Log In
-                        </button>
-
-                        <a href="#upload" className={"cta"}> Get Started </a>
+                        {isSignedIn ? (
+                                <>
+                                    <span className={"greeting"}>
+                                        {username? `Hi, ${username}` : "Signed In"}
+                                    </span>
+                                    <Button size="sm" onClick={handleAuthClick}>
+                                        Log Out
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button onClick={handleAuthClick} size="sm" variant={"ghost"}>
+                                        Log In
+                                    </Button>
+                                    <a href="#upload" className={"cta"}> Get Started </a>
+                                </>
+                        )}
                     </div>
                 </nav>
             </header>
