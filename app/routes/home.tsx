@@ -1,34 +1,70 @@
 import type { Route } from "./+types/home";
 import Navbar from "../../components/Navbar";
-import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
+import {ArrowRight, ArrowUpRight, Clock, Layers} from "lucide-react";
 import Button from "../../components/ui/Button";
 import Upload from "../../components/Upload";
+import {useNavigate} from "react-router";
+import {useEffect, useRef, useState} from "react";
+import {createProject, getProjects} from "../../lib/puter.action";
 
 export function meta({}: Route.MetaArgs) {
     return [
-        { title: "Roomie" },
-        { name: "description", content: "AI-first design environment" },
+        { title: "New React Router App" },
+        { name: "description", content: "Welcome to React Router!" },
     ];
 }
 
 export default function Home() {
+    const navigate = useNavigate();
+    const [projects, setProjects] = useState<DesignItem[]>([]);
+    const isCreatingProjectRef = useRef(false);
 
-    const projects = [
-        {
-            id: "1",
-            name: "Residence 1",
-            image:
-                "https://images.unsplash.com/photo-1600585154340-be6161a56a0c",
-            timestamp: Date.now(),
-        },
-        {
-            id: "2",
-            name: "Residence 2",
-            image:
-                "https://images.unsplash.com/photo-1600210492493-0946911123ea",
-            timestamp: Date.now(),
-        },
-    ];
+    const handleUploadComplete = async (base64Image: string) => {
+        try {
+
+            if(isCreatingProjectRef.current) return false;
+            isCreatingProjectRef.current = true;
+            const newId = Date.now().toString();
+            const name = `Residence ${newId}`;
+
+            const newItem = {
+                id: newId, name, sourceImage: base64Image,
+                renderedImage: undefined,
+                timestamp: Date.now()
+            }
+
+            const saved = await createProject({ item: newItem, visibility: 'private' });
+
+            if(!saved) {
+                console.error("Failed to create project");
+                return false;
+            }
+
+            setProjects((prev) => [saved, ...prev]);
+
+            navigate(`/visualizer/${newId}`, {
+                state: {
+                    initialImage: saved.sourceImage,
+                    initialRendered: saved.renderedImage || null,
+                    name
+                }
+            });
+
+            return true;
+        } finally {
+            isCreatingProjectRef.current = false;
+        }
+    }
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            const items = await getProjects();
+
+            setProjects(items)
+        }
+
+        fetchProjects();
+    }, []);
 
     return (
         <div className="home">
@@ -43,10 +79,10 @@ export default function Home() {
                     <p>Introducing Roomie</p>
                 </div>
 
-                <h1>Bring your dream spaces to life at the speed of thought</h1>
+                <h1>Build beautiful spaces at the speed of thought with Roomify</h1>
 
                 <p className="subtitle">
-                    Roomie is an AI-first design environment that lets you design and render rooms faster than ever.
+                    Roomie is an AI-first design environment that helps you visualize, render, and ship architectural projects faster  than ever.
                 </p>
 
                 <div className="actions">
@@ -69,11 +105,10 @@ export default function Home() {
                             </div>
 
                             <h3>Upload your floor plan</h3>
-                            <p>Supports JPG, PNG formats up to 10MB</p>
+                            <p>Supports JPG, PNG, formats up to 10MB</p>
                         </div>
 
-                        {/* UI only upload */}
-                        <Upload />
+                        <Upload onComplete={handleUploadComplete} />
                     </div>
                 </div>
             </section>
@@ -88,10 +123,11 @@ export default function Home() {
                     </div>
 
                     <div className="projects-grid">
-                        {projects.map(({ id, name, image, timestamp }) => (
-                            <div key={id} className="project-card group">
+                        {projects.map(({id, name, renderedImage, sourceImage, timestamp}) => (
+                            <div key={id} className="project-card group" onClick={() => navigate(`/visualizer/${id}`)}>
                                 <div className="preview">
-                                    <img src={image} alt="Project" />
+                                    <img  src={renderedImage || sourceImage} alt="Project"
+                                    />
 
                                     <div className="badge">
                                         <span>Community</span>
@@ -108,7 +144,6 @@ export default function Home() {
                                             <span>By James</span>
                                         </div>
                                     </div>
-
                                     <div className="arrow">
                                         <ArrowUpRight size={18} />
                                     </div>
@@ -119,5 +154,5 @@ export default function Home() {
                 </div>
             </section>
         </div>
-    );
+    )
 }
