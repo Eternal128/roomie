@@ -53,4 +53,8 @@ STYLE & LIGHTING:
 - Lighting: bright, neutral daylight. High clarity and balanced contrast.
 - Materials: realistic wood/tile floors, clean walls, subtle shadows.
 - Finish: professional architectural visualization; no text, no watermarks, no logos.
+
+STYLE DEFAULTS (apply only if no user override is given):
+- Materials: warm wood floors, white walls, neutral contemporary furnishings.
+- Lighting: bright natural daylight from windows.
 `.trim();

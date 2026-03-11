@@ -1,15 +1,15 @@
 import puter from "@heyputer/puter.js";
-import {ROOMIE_RENDER_PROMPT} from "./constants";
+import { ROOMIE_RENDER_PROMPT } from "./constants";
+
+export interface Generate3DViewParams {
+    sourceImage: string;
+    customPrompt?: string;
+}
 
 export const fetchAsDataUrl = async (url: string): Promise<string> => {
     const response = await fetch(url);
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-    }
-
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
     const blob = await response.blob();
-
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -24,27 +24,28 @@ export const generate3DView = async ({ sourceImage, customPrompt }: Generate3DVi
         : await fetchAsDataUrl(sourceImage);
 
     const base64Data = dataUrl.split(',')[1];
-    const mimeType = dataUrl.split(';')[0].split(':')[1];
+    const mimeType = dataUrl.split(';')[0].split(':')[1] as 'image/png' | 'image/jpeg' | 'image/jpg' | 'image/webp';
 
     if (!mimeType || !base64Data) throw new Error('Invalid source image payload');
 
     const prompt = customPrompt?.trim()
-        ? `${ROOMIE_RENDER_PROMPT}\n\nUSER PREFERENCES:\n${customPrompt.trim()}`
+        ? `${ROOMIE_RENDER_PROMPT}
+
+CRITICAL STYLE OVERRIDE — APPLY THIS TO THE ENTIRE RENDER:
+${customPrompt.trim()}
+
+Every surface, material, piece of furniture, and lighting choice must visibly reflect the above preferences.`
         : ROOMIE_RENDER_PROMPT;
 
-    const response = await puter.ai.txt2img(prompt, {
-        provider: "gemini",
-        model: "gemini-2.5-flash-image-preview",
+    // txt2img returns an HTMLImageElement directly — just read .src
+    const image = await puter.ai.txt2img(prompt, {
+        provider: 'gemini',
+        model: 'gemini-2.5-flash-image-preview',
         input_image: base64Data,
         input_image_mime_type: mimeType,
-        ratio: { w: 1024, h: 1024 },
     });
 
-    const rawImageUrl = (response as HTMLImageElement).src ?? null;
-    if (!rawImageUrl) return { renderedImage: null, renderedPath: undefined };
-
-    const renderedImage = rawImageUrl.startsWith('data:')
-        ? rawImageUrl : await fetchAsDataUrl(rawImageUrl);
+    const renderedImage = image?.src ?? null;
 
     return { renderedImage, renderedPath: undefined };
-}
+};

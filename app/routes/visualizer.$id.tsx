@@ -65,6 +65,8 @@ const VisualizerId = () => {
             });
 
             if (result.renderedImage) {
+                // Set image immediately — do NOT call setProject, which would
+                // trigger the useEffect and overwrite this with the cached render
                 setCurrentImage(result.renderedImage);
 
                 const updatedItem = {
@@ -76,12 +78,8 @@ const VisualizerId = () => {
                     isPublic: item.isPublic ?? false,
                 }
 
-                const saved = await createProject({ item: updatedItem, visibility: "private" })
-
-                if (saved) {
-                    setProject(saved);
-                    setCurrentImage(saved.renderedImage || result.renderedImage);
-                }
+                // Save in background but don't update project state
+                createProject({ item: updatedItem, visibility: "private" });
             }
         } catch (error) {
             console.error('Generation failed: ', error)
